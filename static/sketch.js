@@ -2,7 +2,6 @@ let camera_button = document.querySelector("#start-camera");
 let video = document.querySelector("#video");
 let start_button = document.querySelector("#start-record");
 let stop_button = document.querySelector("#stop-record");
-let download_link = document.querySelector("#download-video");
 
 let camera_stream = null;
 let media_recorder = null;
