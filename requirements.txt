@@ -1,2 +1,5 @@
 gunicorn
 flask
+opencv-python
+numpy
+datetime
