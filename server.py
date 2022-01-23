@@ -184,4 +184,4 @@ if __name__ == '__main__':
     # camera can work with HTTP only on 127.0.0.1
     # for 0.0.0.0 it needs HTTPS so it needs `ssl_context='adhoc'` (and in browser it need to accept untrusted HTTPS
     # app.run(host='127.0.0.1', port=5000)#, debug=True)
-    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context='adhoc')
+    app.run(debug=False)
