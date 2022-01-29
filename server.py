@@ -18,26 +18,6 @@ import cv2
 import numpy as np
 import datetime
 
-
-def eye_aspect_ratio(eye):
-    A = distance.euclidean(eye[1], eye[5])
-    B = distance.euclidean(eye[2], eye[4])
-    C = distance.euclidean(eye[0], eye[3])
-    ear = (A + B) / (2.0 * C)
-    return ear
-
-
-thresh = 0.25
-frame_check = 20
-detect = dlib.get_frontal_face_detector()
-# Dat file is the crux of the code
-predict = dlib.shape_predictor("models/shape_predictor_68_face_landmarks.dat")
-
-(lStart, lEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["left_eye"]
-(rStart, rEnd) = face_utils.FACIAL_LANDMARKS_68_IDXS["right_eye"]
-cap = cv2.VideoCapture(0)
-flag = 0
-
 app = Flask(__name__)
 
 
@@ -173,59 +153,26 @@ def upload():
         # fs = request.files['snap'] # it raise error when there is no `snap` in form
         fs = request.files.get('snap')
         if fs:
+            #print('FileStorage:', fs)
+
+            # https://stackoverflow.com/questions/27517688/can-an-uploaded-image-be-loaded-directly-by-cv2
+            # https://stackoverflow.com/a/11017839/1832058
             img = cv2.imdecode(np.frombuffer(
                 fs.read(), np.uint8), cv2.IMREAD_UNCHANGED)
-            # #print('FileStorage:', fs)
-            while True:
-                #ret, frame = cap.read()
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                subjects = detect(gray, 0)
-                for subject in subjects:
-                    shape = predict(gray, subject)
-                    shape = face_utils.shape_to_np(
-                        shape)  # converting to NumPy Array
-                    leftEye = shape[lStart:lEnd]
-                    rightEye = shape[rStart:rEnd]
-                    leftEAR = eye_aspect_ratio(leftEye)
-                    rightEAR = eye_aspect_ratio(rightEye)
-                    ear = (leftEAR + rightEAR) / 2.0
-                    leftEyeHull = cv2.convexHull(leftEye)
-                    rightEyeHull = cv2.convexHull(rightEye)
-                    cv2.drawContours(img, [leftEyeHull], -1, (0, 255, 0), 1)
-                    cv2.drawContours(img, [rightEyeHull], -1, (0, 255, 0), 1)
-                    if ear < thresh:
-                        flag += 1
-                        print(flag)
-                        if flag >= frame_check:
-                            cv2.putText(img, "ALERT! ALERT! ALERT! ALERT! ALERT!", (10, 30),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                            cv2.putText(img, "ALERT! ALERT! ALERT! ALERT! ALERT!", (10, 325),
-                                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-                            #print ("Drowsy")
-                    else:
-                        flag = 0
-                #cv2.imshow("Frame", frame)
-                #key = cv2.waitKey(1) & 0xFF
-                # if key == ord("q"):
-                    break
-            # cv2.destroyAllWindows()
-            # img.release()
-            # # https://stackoverflow.com/questions/27517688/can-an-uploaded-image-be-loaded-directly-by-cv2
-            # # https://stackoverflow.com/a/11017839/1832058
-            # height, width = img.shape[:2]
-            # #print('Shape:', img.shape)
-            # # rectangle(image, start_point, end_point, color, thickness)
-            # img = cv2.rectangle(
-            #     img, (20, 20), (width-20, height-20), (0, 0, 255), 2)
+            height, width = img.shape[:2]
+            #print('Shape:', img.shape)
+            # rectangle(image, start_point, end_point, color, thickness)
+            img = cv2.rectangle(
+                img, (20, 20), (width-20, height-20), (0, 0, 255), 2)
 
-            # text = datetime.datetime.now().strftime('%Y.%m.%d %H.%M.%S.%f')
-            # img = cv2.putText(img, text, (5, 15), cv2.FONT_HERSHEY_SIMPLEX,
-            #                   0.5, (255, 255, 255), 1, cv2.LINE_AA)
-            # #cv2.imshow('image', img)
-            # # cv2.waitKey(1)
+            text = datetime.datetime.now().strftime('%Y.%m.%d %H.%M.%S.%f')
+            img = cv2.putText(img, text, (5, 15), cv2.FONT_HERSHEY_SIMPLEX,
+                              0.5, (255, 255, 255), 1, cv2.LINE_AA)
+            #cv2.imshow('image', img)
+            # cv2.waitKey(1)
 
-            # # https://jdhao.github.io/2019/07/06/python_opencv_pil_image_to_bytes/
-            # ret, buf = cv2.imencode('.jpg', img)
+            # https://jdhao.github.io/2019/07/06/python_opencv_pil_image_to_bytes/
+            ret, buf = cv2.imencode('.jpg', img)
 
             # return f'Got Snap! {img.shape}'
             return send_file_data(buf.tobytes())
@@ -240,4 +187,4 @@ if __name__ == '__main__':
     # camera can work with HTTP only on 127.0.0.1
     # for 0.0.0.0 it needs HTTPS so it needs `ssl_context='adhoc'` (and in browser it need to accept untrusted HTTPS
     # app.run(host='127.0.0.1', port=5000)#, debug=True)
-    app.run(debug=False)
+    app.run(host='0.0.0.0', port=5000, debug=True, ssl_context='adhoc')
